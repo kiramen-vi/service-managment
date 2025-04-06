@@ -1,17 +1,11 @@
-const adminMiddleware = (req, res, next) => {
-    // Check if user is authenticated
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized. Please log in." });
-    }
-  
-    // Check if user is an admin
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Admins only." });
-    }
-  
-    // User is an admin, proceed to the next middleware or route
+const isAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
     next();
-  };
-  
-  module.exports = adminMiddleware;
-  
+  } else {
+    res.status(403).json({ message: 'Admin access only' });
+  }
+};
+
+const protect = require('./authMiddleware').protect;
+
+module.exports = { isAdmin, protect };

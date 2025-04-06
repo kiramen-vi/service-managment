@@ -1,30 +1,22 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-const UserSchema = new mongoose.Schema(
-  {
-    // Basic user details
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    phone: { type: String, default: "" }, // Optional phone number
-    profilePicture: { type: String, default: "" }, // Profile picture URL
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  role: { type: String, enum: ['admin', 'client', 'technician'], default: 'client' }
+});
 
-    // User role (client, technician, or admin)
-    role: { 
-      type: String, 
-      enum: ["client", "technician", "admin"], 
-      default: "client" 
-    },
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
-    // Technician-specific fields
-    earnings: { type: Number, default: 0 }, 
-    availability: { type: Boolean, default: true },
-    specialization: { type: String, default: "" }, // Technician's expertise (optional)
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
-    // Soft delete feature
-    isActive: { type: Boolean, default: true }
-  },
-  { timestamps: true } // Automatically adds createdAt & updatedAt fields
-);
-
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model('User', userSchema);

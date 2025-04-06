@@ -1,46 +1,22 @@
-const express = require("express");
-const authMiddleware = require("../middleware/authMiddleware");
-const technicianMiddleware = require("../middleware/technicianMiddleware"); 
-const User = require("../models/User");
-
+const express = require('express');
 const router = express.Router();
+const {
+  getDashboardData,
+  createTechnician,
+  createClient,
+  deleteTechnician,
+  deleteClient,
+} = require('../controllers/adminController'); // double check this path
 
-// ✅ Get technician profile (earnings & availability)
-router.get("/profile", authMiddleware, technicianMiddleware, async (req, res) => {
-    try {
-        const technician = await User.findById(req.user.id).select("-password");
-        if (!technician) {
-            return res.status(404).json({ message: "Technician not found" });
-        }
-        res.json(technician);
-    } catch (err) {
-        res.status(500).json({ message: "Server error", error: err.message });
-    }
-});
+const { protect, isAdmin } = require('../middleware/authMiddleware');
 
-// ✅ Update availability
-router.put("/availability", authMiddleware, technicianMiddleware, async (req, res) => {
-    try {
-        const { availability } = req.body;
+// TEMP: Debug to confirm import
+console.log('getDashboardData is:', getDashboardData); // should print a function
 
-        if (typeof availability !== "boolean") {
-            return res.status(400).json({ message: "Invalid availability value. Must be true or false." });
-        }
-
-        const technician = await User.findByIdAndUpdate(
-            req.user.id,
-            { availability },
-            { new: true }
-        ).select("-password");
-
-        if (!technician) {
-            return res.status(404).json({ message: "Technician not found" });
-        }
-
-        res.json({ message: "Availability updated successfully", technician });
-    } catch (err) {
-        res.status(500).json({ message: "Server error", error: err.message });
-    }
-});
+router.get('/dashboard', protect, isAdmin, getDashboardData);
+router.post('/create-technician', protect, isAdmin, createTechnician);
+router.post('/create-client', protect, isAdmin, createClient);
+router.delete('/delete-technician/:id', protect, isAdmin, deleteTechnician);
+router.delete('/delete-client/:id', protect, isAdmin, deleteClient);
 
 module.exports = router;
